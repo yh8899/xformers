@@ -8,7 +8,7 @@ import textwrap
 from collections import deque
 from typing import List, Sequence, Type, TypeVar
 
-from . import cutlass, decoder, flash, small_k, triton
+from . import cutlass, decoder, flash, small_k, triton, flash2
 from .common import AttentionBwOpBase, AttentionFwOpBase, Inputs
 
 
@@ -82,6 +82,7 @@ def _dispatch_fw(inp: Inputs, needs_gradient: bool) -> Type[AttentionFwOpBase]:
 
     priority_list_ops = deque(
         [
+            flash2.FwOp,
             flash.FwOp,
             triton.FwOp,
             cutlass.FwOp,
@@ -112,6 +113,7 @@ def _is_cutlassB_faster_than_flash(inp: Inputs) -> bool:
 
 def _dispatch_bw(inp: Inputs) -> Type[AttentionBwOpBase]:
     priority_list_ops: List[Type[AttentionBwOpBase]] = [
+        flash2.BwOp,
         flash.BwOp,
         cutlass.BwOp,
         # CUDA illegal memory issues, race conditions etc..

@@ -80,27 +80,27 @@ device = torch.device("cuda")
 
 NUM_THREADS = [1] if device.type == "cuda" else [1, 40]
 SHAPES = [
-    # ViT
-    (384, 197, 1, 88),
-    (384, 197, 1, 80),
-    (384, 197, 1, 64),
-    (1024, 197, 1, 88),
-    (1024, 197, 1, 80),
-    (1024, 197, 1, 64),
-    # ViT-Huge
-    (32 * 16, 197, 1, 80),
-    (32, 197, 16, 80),
-    (32, 197, 16, 64),
-    (32, 197, 16, 128),
-    # ViT-Giant
-    (16 * 16, 197, 1, 88),
-    (16, 197, 16, 88),
-    (16, 197, 16, 64),
-    (16, 197, 16, 128),
-    # FB models
-    (1024, 82, 8, 64),
-    (150, 256, 16, 64),
-    (64, 256, 12, 64),
+    # # ViT
+    # (384, 197, 1, 88),
+    # (384, 197, 1, 80),
+    # (384, 197, 1, 64),
+    # (1024, 197, 1, 88),
+    # (1024, 197, 1, 80),
+    # (1024, 197, 1, 64),
+    # # ViT-Huge
+    # (32 * 16, 197, 1, 80),
+    # (32, 197, 16, 80),
+    # (32, 197, 16, 64),
+    # (32, 197, 16, 128),
+    # # ViT-Giant
+    # (16 * 16, 197, 1, 88),
+    # (16, 197, 16, 88),
+    # (16, 197, 16, 64),
+    # (16, 197, 16, 128),
+    # # FB models
+    # (1024, 82, 8, 64),
+    # (150, 256, 16, 64),
+    # (64, 256, 12, 64),
     # Stable diffusion (https://github.com/huggingface/diffusers/pull/532)
     (1, 4096, 16, 40),  # 512x512
     (1, 16384, 16, 40),  # 1024x1024
@@ -111,18 +111,19 @@ SHAPES = [
     (4, 16384, 16, 40),
     (4, 4096, 16, 80),
     (4, 16384, 16, 80),
-    # ParlAI model
-    (256, 4096, 16, 64),
-    # Zetta B M H K
-    (8, 2048, 20, 128),
-    # LLaMa 70b - mp=8/16
-    *sorted(list(itertools.product([1, 2], [2048, 4096, 8192], [4, 8], [128]))),
-    *sorted(list(itertools.product([16], [128, 512, 1024], [16], [16, 32, 64, 128]))),
+    # # ParlAI model
+    # (256, 4096, 16, 64),
+    # # Zetta B M H K
+    # (8, 2048, 20, 128),
+    # # LLaMa 70b - mp=8/16
+    # *sorted(list(itertools.product([1, 2], [2048, 4096, 8192], [4, 8], [128]))),
+    # *sorted(list(itertools.product([16], [128, 512, 1024], [16], [16, 32, 64, 128]))),
 ]
 
 OPS = [
     (xformers.ops.fmha.cutlass.FwOp, xformers.ops.fmha.cutlass.BwOp),
     (xformers.ops.fmha.flash.FwOp, xformers.ops.fmha.flash.BwOp),
+    # (xformers.ops.fmha.flash2.FwOp, xformers.ops.fmha.flash2.BwOp),
     # TODO: Triton is not stable: it can trigger Illegal Memory Accesses
     # and its performance varies a lot between runs.
     # (xformers.ops.fmha.triton.FwOp, xformers.ops.fmha.triton.BwOp),

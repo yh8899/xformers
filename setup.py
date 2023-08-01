@@ -27,6 +27,7 @@ from torch.utils.cpp_extension import (
     CppExtension,
     CUDAExtension,
 )
+from packaging.version import parse, Version
 
 this_dir = os.path.dirname(__file__)
 
@@ -102,6 +103,19 @@ def get_cuda_version(cuda_dir) -> int:
     assert bare_metal_minor < 100
     return bare_metal_major * 100 + bare_metal_minor
 
+def append_nvcc_threads(nvcc_extra_args):
+    _, bare_metal_version = get_cuda_bare_metal_version(CUDA_HOME)
+    if bare_metal_version >= Version("11.2"):
+        return nvcc_extra_args + ["--threads", "4"]
+    return nvcc_extra_args
+
+def get_cuda_bare_metal_version(cuda_dir):
+    raw_output = subprocess.check_output([cuda_dir + "/bin/nvcc", "-V"], universal_newlines=True)
+    output = raw_output.split()
+    release_idx = output.index("release") + 1
+    bare_metal_version = parse(output[release_idx].split(",")[0])
+
+    return raw_output, bare_metal_version
 
 def get_flash_attention_extensions(cuda_version: int, extra_compile_args):
     # Figure out default archs to target
@@ -141,6 +155,14 @@ def get_flash_attention_extensions(cuda_version: int, extra_compile_args):
             "to run `git submodule update --init --recursive` ?"
         )
 
+    generator_flag = []
+    torch_dir = torch.__path__[0]
+    if os.path.exists(os.path.join(torch_dir, "include", "ATen", "CUDAGeneratorImpl.h")):
+        generator_flag = ["-DOLD_GENERATOR_PATH"]
+    cc_flag = []
+    cc_flag.append("-gencode")
+    cc_flag.append("arch=compute_80,code=sm_80")
+
     return [
         CUDAExtension(
             name="xformers._C_flashattention",
@@ -178,6 +200,75 @@ def get_flash_attention_extensions(cuda_version: int, extra_compile_args):
                     Path(flash_root) / "csrc" / "flash_attn",
                     Path(flash_root) / "csrc" / "flash_attn" / "src",
                     Path(this_dir) / "third_party" / "cutlass" / "include",
+                ]
+            ],
+        ),
+        CUDAExtension(
+            name="xformers.flash_attn_2_cuda",
+            sources=[
+                os.path.join("third_party", "flash-attention-v2", path)
+                for path in [
+                    "csrc/flash_attn/flash_api.cpp",
+                    "csrc/flash_attn/src/flash_fwd_hdim32_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim32_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim64_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim64_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim96_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim96_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim128_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim128_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim160_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim160_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim192_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim192_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim224_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim224_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim256_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_fwd_hdim256_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim32_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim32_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim64_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim64_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim96_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim96_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim128_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim128_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim160_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim160_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim192_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim192_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim224_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim224_bf16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim256_fp16_sm80.cu",
+                    "csrc/flash_attn/src/flash_bwd_hdim256_bf16_sm80.cu",
+                ]
+            ],
+            extra_compile_args={
+                "cxx": ["-O3", "-std=c++17"] + generator_flag,
+                "nvcc": append_nvcc_threads(
+                    [
+                        "-O3",
+                        "-std=c++17",
+                        "-U__CUDA_NO_HALF_OPERATORS__",
+                        "-U__CUDA_NO_HALF_CONVERSIONS__",
+                        "-U__CUDA_NO_HALF2_OPERATORS__",
+                        "-U__CUDA_NO_BFLOAT16_CONVERSIONS__",
+                        "--expt-relaxed-constexpr",
+                        "--expt-extended-lambda",
+                        "--use_fast_math",
+                        "--ptxas-options=-v",
+                        "-lineinfo"
+                    ]
+                    + generator_flag
+                    + cc_flag
+                ),
+            },
+            include_dirs=[
+                p.absolute()
+                for p in [
+                    Path(this_dir) / 'third_party' / 'flash-attention-v2' / 'csrc' / 'flash_attn',
+                    Path(this_dir) / 'third_party' / 'flash-attention-v2' / 'csrc' / 'flash_attn' / 'src',
+                    Path(this_dir) / 'third_party' / 'flash-attention-v2' / 'csrc' / 'cutlass' / 'include',
                 ]
             ],
         )
