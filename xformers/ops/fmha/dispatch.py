@@ -16,6 +16,7 @@ def _is_cutlass_fwd_faster_than_flash(inp: Inputs) -> bool:
     # For dropout, we can't mix & match kernels
     # Unfortunately, the dropout implementation in CUTLASS
     # backward is pretty slow for the BW, so disable it here
+    return False
     if inp.p > 0.0:
         return False
 
@@ -92,6 +93,7 @@ def _dispatch_fw(inp: Inputs, needs_gradient: bool) -> Type[AttentionFwOpBase]:
     if _is_cutlass_fwd_faster_than_flash(inp):
         priority_list_ops.remove(cutlass.FwOp)
         priority_list_ops.appendleft(cutlass.FwOp)
+        # print(f"cutlass faster than flash")
     if _is_triton_fwd_fastest(inp):
         priority_list_ops.remove(triton.FwOp)
         priority_list_ops.appendleft(triton.FwOp)

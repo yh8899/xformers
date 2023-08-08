@@ -321,6 +321,7 @@ def _memory_efficient_attention_forward_requires_grad(
         op = _dispatch_fw(inp, True)
     else:
         _ensure_op_supports_or_raise(ValueError, "memory_efficient_attention", op, inp)
+    # print(op)
     out = op.apply(inp, needs_gradient=True)
     assert out[1] is not None
     return (out[0].reshape(output_shape), out[1])

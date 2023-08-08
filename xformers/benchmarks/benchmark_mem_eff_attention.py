@@ -123,7 +123,7 @@ SHAPES = [
 OPS = [
     (xformers.ops.fmha.cutlass.FwOp, xformers.ops.fmha.cutlass.BwOp),
     (xformers.ops.fmha.flash.FwOp, xformers.ops.fmha.flash.BwOp),
-    # (xformers.ops.fmha.flash2.FwOp, xformers.ops.fmha.flash2.BwOp),
+    (xformers.ops.fmha.flash2.FwOp, xformers.ops.fmha.flash2.BwOp),
     # TODO: Triton is not stable: it can trigger Illegal Memory Accesses
     # and its performance varies a lot between runs.
     # (xformers.ops.fmha.triton.FwOp, xformers.ops.fmha.triton.BwOp),

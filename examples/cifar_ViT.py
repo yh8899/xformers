@@ -197,7 +197,7 @@ if __name__ == "__main__":
     # Adjust batch depending on the available memory on your machine.
     # You can also use reversible layers to save memory
     REF_BATCH = 512
-    BATCH = 128
+    BATCH = 8
 
     MAX_EPOCHS = 30
     NUM_WORKERS = 4
@@ -214,7 +214,7 @@ if __name__ == "__main__":
         pin_memory=True,
     )
 
-    image_size = dm.size(-1)  # 32 for CIFAR
+    image_size = dm.dims[-1]  # 32 for CIFAR
     num_classes = dm.num_classes  # 10 for CIFAR
 
     # compute total number of steps

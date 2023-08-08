@@ -249,12 +249,14 @@ class FwOp(AttentionFwOpBase):
             device_capability = torch.cuda.get_device_capability(d.device)
             if device_capability < (8, 0):
                 reasons.append("requires a GPU with compute capability > 8.0")
+        # print(reasons)
         return reasons
 
     @classmethod
     def apply(
         cls, inp: Inputs, needs_gradient: bool
     ) -> Tuple[torch.Tensor, Optional[Context]]:
+        # print(f"*"*20 + "use flash2 forward")
         return_softmax = False
         out_shape = [
             inp.query.shape[0],
@@ -352,6 +354,7 @@ class BwOp(AttentionBwOpBase):
 
     @classmethod
     def apply(cls, ctx: Context, inp: Inputs, grad: torch.Tensor) -> Gradients:
+        # print(f"*"*20 + "use flash2 backward")
         dq_shape, dk_shape, dv_shape = inp.query.shape, inp.key.shape, inp.value.shape
         (
             inp,

@@ -10,7 +10,7 @@ from pl_bolts.datamodules import CIFAR10DataModule
 from torch import nn
 from torchmetrics import Accuracy
 
-from examples.cifar_ViT import Classifier, VisionTransformer
+from cifar_ViT import Classifier, VisionTransformer
 from xformers.factory import xFormer, xFormerConfig
 from xformers.helpers.hierarchical_configs import (
     BasicLayerConfig,
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     # Adjust batch depending on the available memory on your machine.
     # You can also use reversible layers to save memory
     REF_BATCH = 768
-    BATCH = 256  # lower if not enough GPU memory
+    BATCH = 1  # lower if not enough GPU memory
 
     MAX_EPOCHS = 50
     NUM_WORKERS = 4
@@ -157,7 +157,7 @@ if __name__ == "__main__":
         pin_memory=True,
     )
 
-    image_size = dm.size(-1)  # 32 for CIFAR
+    image_size = 32 # dm.size(-1)  # 32 for CIFAR
     num_classes = dm.num_classes  # 10 for CIFAR
 
     # compute total number of steps
